@@ -140,12 +140,14 @@ end
 
 include MCollective::RPC
 
-mc = rpcclient("rpcutil")
+mc = rpcclient("rpcutil", :debug => true)
 mc.progress = false
 
 mc.discover.sort.each do |host|
 
-    log.info("Host: #{host}")
+    short_hostname = host.split('.').first
+
+    log.info("Host: #{short_hostname} (#{host})")
 
     # Get inventory details for each host
     inventory = mc.custom_request( "inventory", {}, host,
@@ -154,8 +156,9 @@ mc.discover.sort.each do |host|
 
     log.info("\tIP #{inventory[:data][:facts]['ipaddress']}")
 
-    hosts[ host ][:mcollective][:ip]      = inventory[:data][:facts]['ipaddress']
-    hosts[ host ][:mcollective][:classes] = inventory[:data][:classes]
+
+    hosts[ short_hostname ][:mcollective][:ip]      = inventory[:data][:facts]['ipaddress']
+    hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
 
 end
 
