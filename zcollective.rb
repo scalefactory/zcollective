@@ -3,6 +3,7 @@
 require 'optparse'
 require 'logger'
 require 'mcollective'
+require 'json'
 
 $:.push( File.join( File.dirname(__FILE__), 'lib' ) )
 require 'zabbixclient'
@@ -54,14 +55,15 @@ log = Logger.new(STDERR)
 if options[:debug]
     log.level = Logger::DEBUG
 else
-    log.level = Logger::WARN
+    log.level = Logger::INFO
 end
 log.info( "Connecting to Zabbix RPC service" )
 
 zabbix_client = ZabbixClient.new(
     :url      => options[:zabbix_api_url],
     :user     => options[:zabbix_user],
-    :password => options[:zabbix_pass]
+    :password => options[:zabbix_pass],
+    :debug    => true
 )
 
 log.info( "Connected and authenticated" )
@@ -173,17 +175,77 @@ hosts.each do |host,data|
 
         log.info( "Host #{host} found by mcollective but not in zabbix" )
 
+        templates_to_add = []
+        data[:mcollective][:classes].each do |template|
+            next unless zabbix_templates.has_key?( template )
+            template_id = zabbix_templates[ template ]
+            log.debug("\tWill be adding template #{template} ID #{template_id}")
+            templates_to_add.push( { 'templateid' => template_id } )
+        end
+
+        unless options[:noop]
+
+            resp = zabbix_client.request( 'host.create',
+                'host'       => host,
+                'interfaces' => [
+                    {
+                        'type'  => 1,
+                        'main'  => 1,
+                        'useip' => 1,
+                        'ip'    => data[:mcollective][:ip],
+                        'dns'   => host,
+                        'port'  => '10050'
+                    }
+                ],
+                'groups' => [
+                    { 'groupid' => '100100000000002' }
+                ],
+                'templates' => templates_to_add
+            )
+
+            new_hostid = resp['hostids'].first
+
+            log.info("Host #{host} added as ID #{new_hostid}")
+
+        end
+
     end
 
     if data.has_key?(:zabbix) and !data.has_key?(:mcollective)
 
-        log.info( "Host #{host} found in zabbix but not by mcollective" )
+        log.warn( "Host #{host} found in zabbix but not by mcollective" )
 
     end
 
     if data.has_key?(:zabbix) and data.has_key?(:mcollective)
 
         log.info( "Host #{host} in both zabbix and mcollective" )
+
+        templates_to_add = []
+
+        data[:mcollective][:classes].each do |template|
+
+            next unless zabbix_templates.has_key?( template )
+
+            log.debug("\tHas mcollective class #{template} matching a zabbix template")
+
+            if data[:zabbix][:templates].index( template )
+                log.debug("\tZabbix host already has a template for this class")
+            else
+                log.info("\tZabbix #{host} does not have a template for #{template}")
+                templates_to_add.push( { 'templateid' => zabbix_templates[ template ] } )
+            end
+
+        end
+
+        if !options[:noop] and templates_to_add.count > 0
+
+            zabbix_client.request( 'template.massadd',
+                'templates' => templates_to_add,
+                'hosts'     => { 'hostid' => data[:zabbix][:hostid] }
+            )
+            
+        end
 
     end
 
