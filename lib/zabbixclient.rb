@@ -76,7 +76,7 @@ class ZabbixClient
         result = JSON.parse( response.body )
 
         if result['error']
-            raise "JSON-RPC error: #{result['error']}"
+            raise "JSON-RPC error: #{result['error']['message']} (#{result['error']['data']})"
         end
 
         result['result']
