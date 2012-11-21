@@ -4,6 +4,7 @@ require 'optparse'
 require 'logger'
 require 'mcollective'
 require 'json'
+require 'netaddr'
 
 $:.push( File.join( File.dirname(__FILE__), 'lib' ) )
 require 'zabbixclient'
@@ -34,6 +35,11 @@ optparse = OptionParser.new do |opts|
     options[:noop] = false
     opts.on('n', '--noop', 'Don\'t make changes') do
         options[:noop] = true
+    end
+
+    options[:interface_cidr] = '0.0.0.0/0'
+    opts.on('c', '--interface-cidr CIDR', 'Only consider interfaces matching the given CIDR') do |c|
+        options[:interface_cidr] = c
     end
 
 end
@@ -163,13 +169,40 @@ mc.discover.sort.each do |host|
         { "identity" => host }
     ).first
 
-    # XXX using the ipaddress fact is probably the wrong thing to do here
-    # We should take an 'admin interface range' CIDR from the commandline
-    #  and use the address matching that instead.
-    
-    log.info("\tIP #{inventory[:data][:facts]['ipaddress']}")
+    # Work through network interfaces reported by Facter and find the first
+    #  which matches the CIDR passed on the commandline.  Use that to talk
+    #  zabbix to.
 
-    hosts[ short_hostname ][:mcollective][:ip]      = inventory[:data][:facts]['ipaddress']
+    cidr_to_match = NetAddr::CIDR.create( options[:interface_cidr] )
+    ip = nil
+
+    inventory[:data][:facts].sort.each do |key,value|
+
+        next unless key.match(/^ipaddress_/)
+
+        log.debug("Potential IP interface #{key} with IP #{value}")
+
+        ip_cidr = NetAddr::CIDR.create( value )
+        if ip_cidr.is_contained?( cidr_to_match) 
+
+           log.debug("IP matches CIDR #{options[:interface_cidr]}")
+
+           ip = value 
+           break
+
+        else
+            log.debug("IP doesn't match CIDR")
+        end
+
+    end
+
+    unless ip
+        raise "Host #{host} has no IP matching the target CIDR #{options[:interface_cidr]}" 
+    end
+
+    log.info("\tIP #{ip}")
+
+    hosts[ short_hostname ][:mcollective][:ip]      = ip
     hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
 
 end
