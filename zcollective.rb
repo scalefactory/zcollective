@@ -63,21 +63,21 @@ if options[:debug]
 else
     log.level = Logger::INFO
 end
-log.info( "Connecting to Zabbix RPC service" )
+log.debug( "Connecting to Zabbix RPC service" )
 
 zabbix_client = ZabbixClient.new(
     :url      => options[:zabbix_api_url],
     :user     => options[:zabbix_user],
     :password => options[:zabbix_pass],
-    :debug    => true
+    :debug    => options[:debug]
 )
 
-log.info( "Connected and authenticated" )
+log.debug( "Connected and authenticated" )
 
 ############################################################################
 # Fetch list of zabbix templates
 
-log.info( "Fetching list of zabbix templates" )
+log.debug( "Fetching list of zabbix templates" )
 
 zabbix_templates = {}
 
@@ -86,7 +86,7 @@ zabbix_client.request( 'template.get',
     'output' => 'extend' 
 ).each do |template|
 
-    log.info( "\tName: #{template['name']} ID: #{template['templateid']}" )
+    log.debug( "\tName: #{template['name']} ID: #{template['templateid']}" )
     zabbix_templates[ template['name'] ] = template['templateid']
 
 end
@@ -107,7 +107,7 @@ zabbix_client.request( 'host.get',
     'output' => 'extend' 
 ).each do |host|
 
-    log.info( "Host: #{host['name']}, ID: #{host['hostid']}" )
+    log.debug( "Host: #{host['name']}, ID: #{host['hostid']}" )
 
     # Iterate through hostinterfaces, looking for zabbix agent type
     #  interfaces.
@@ -123,7 +123,7 @@ zabbix_client.request( 'host.get',
 
         next unless interface['type'] == "1" # skip non-Zabbix agent interfaces
 
-        log.info( "\tIP: #{interface['ip']}" )
+        log.debug( "\tIP: #{interface['ip']}" )
         hosts[ host['name'] ][:zabbix][:ip] = interface['ip']
 
     end
@@ -140,7 +140,7 @@ zabbix_client.request( 'host.get',
         'hostids' => host['hostid']
     ).each do |template|
 
-        log.info( "\tTemplate: #{template['name']}" )
+        log.debug( "\tTemplate: #{template['name']}" )
         hosts[ host['name'] ][:zabbix][:templates].push( template['name'] )
 
     end
@@ -162,7 +162,7 @@ mc.discover.sort.each do |host|
     
     short_hostname = host.split('.').first
 
-    log.info("Host: #{short_hostname} (#{host})")
+    log.debug("Host: #{short_hostname} (#{host})")
 
     # Get inventory details for each host
     inventory = mc.custom_request( "inventory", {}, host,
@@ -200,7 +200,7 @@ mc.discover.sort.each do |host|
         raise "Host #{host} has no IP matching the target CIDR #{options[:interface_cidr]}" 
     end
 
-    log.info("\tIP #{ip}")
+    log.debug("\tIP #{ip}")
 
     hosts[ short_hostname ][:mcollective][:ip]      = ip
     hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
@@ -239,7 +239,11 @@ hosts.each do |host,data|
             templates_to_add.push( { 'templateid' => template_id } )
         end
 
-        unless options[:noop]
+        if options[:noop]
+
+            log.info("--noop passed - not making changes")
+
+        else 
 
             # If we're not in --noop mode, create the host with the
             #  zabbix API.  Hosts need at least one interface (for now
@@ -268,7 +272,8 @@ hosts.each do |host,data|
 
             new_hostid = resp['hostids'].first
 
-            log.info("Host #{host} added as ID #{new_hostid}")
+            log.info("Host #{host} added as ID #{new_hostid} " <<
+                "with #{templates_to_add.count} templates")
 
         end
 
@@ -290,7 +295,16 @@ hosts.each do |host,data|
     
     if data.has_key?(:zabbix) and data.has_key?(:mcollective)
 
-        log.info( "Host #{host} in both zabbix and mcollective" )
+        log.debug( "Host #{host} in both zabbix and mcollective" )
+
+        # Compare interface addresses and warn if mismatched
+
+        if data[:mcollective][:ip] != data[:zabbix][:ip]
+            log.warn("Host #{host} monitored, but IP mismatch " <<
+                "M:#{data[:mcollective][:ip]} " <<
+                "Z:#{data[:zabbix][:ip]}"
+            )
+        end
 
         templates_to_add = []
 
@@ -316,22 +330,32 @@ hosts.each do |host,data|
                 #  name, the host in question isn't linked to it.  We add this
                 #  template to a list of those that are missing in zabbix.
 
-                log.info("\tZabbix #{host} does not have a template for #{template}")
+                log.info("Zabbix #{host} not linked to a template for #{template}")
                 templates_to_add.push( { 'templateid' => zabbix_templates[ template ] } )
             end
 
         end
 
-        if !options[:noop] and templates_to_add.count > 0
+        if templates_to_add.count > 0
 
-            # If we're not running --noop and we found missing templates,
-            #  link the zabbix host with these.
+            if options[:noop]
 
-            zabbix_client.request( 'template.massadd',
-                'templates' => templates_to_add,
-                'hosts'     => { 'hostid' => data[:zabbix][:hostid] }
-            )
-            
+                log.info("--noop passed - not making changes")
+
+            else
+
+                # If we're not running --noop and we found missing templates,
+                #  link the zabbix host with these.
+
+                zabbix_client.request( 'template.massadd',
+                    'templates' => templates_to_add,
+                    'hosts'     => { 'hostid' => data[:zabbix][:hostid] }
+                )
+
+                log.info("Added missing templates to #{host}")
+
+            end
+
         end
 
     end
