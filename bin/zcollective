@@ -1,13 +1,20 @@
 #!/usr/bin/env ruby
 
+require 'rubygems'
 require 'optparse'
 require 'logger'
-require 'mcollective'
 require 'json'
 require 'netaddr'
+require 'zcollective/zabbixclient'
 
-$:.push( File.join( File.dirname(__FILE__), 'lib' ) )
-require 'zabbixclient'
+begin 
+    require 'mcollective'
+rescue LoadError => e
+    raise unless e.message =~ /mcollective/
+    STDERR.puts "ZCollective requires that you install mcollective. " <<
+        "This is not supplied as a gem - install the OS packages from puppetlabs"
+    exit 2
+end
 
 options = {}
 optparse = OptionParser.new do |opts|
@@ -65,7 +72,7 @@ else
 end
 log.debug( "Connecting to Zabbix RPC service" )
 
-zabbix_client = ZabbixClient.new(
+zabbix_client = ZCollective::ZabbixClient.new(
     :url      => options[:zabbix_api_url],
     :user     => options[:zabbix_user],
     :password => options[:zabbix_pass],
