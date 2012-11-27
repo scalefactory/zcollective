@@ -100,6 +100,52 @@ hosts = Hash.new(&nested_hash)
 
 
 ############################################################################
+# Fetch list of zabbix groups
+# Create "ZCollective discovered hosts" group if it doesn't exist
+
+log.debug( "Fetching list of zabbix hostgroups" )
+
+zcollective_hostgroup_name = 'ZCollective discovered hosts'
+zcollective_hostgroup      = nil
+
+zabbix_client.request( 'hostgroup.get',
+    'search' => '',
+    'output' => 'extend'
+).each do |hostgroup|
+
+    log.debug("\tName: #{hostgroup['name']} ID: #{hostgroup['groupid']}")
+
+    if hostgroup['name'] == zcollective_hostgroup_name
+        zcollective_hostgroup = hostgroup['groupid']
+    end
+
+end
+
+if zcollective_hostgroup.nil?
+
+    if options[:noop]
+
+        log.debug("No zcollective hostgroup, but not creating as " <<
+            "we're in --noop mode")
+
+    else
+
+        log.debug("No zcollective hostgroup: creating")
+
+        resp = zabbix_client.request( 'hostgroup.create',
+            'name' => zcollective_hostgroup_name
+        )
+
+        zcollective_hostgroup = resp['groupids'].first
+
+    end
+
+end
+
+log.debug("ZCollective hostgroup: #{zcollective_hostgroup}")
+
+
+############################################################################
 # Iterate through zabbix hosts
 
 zabbix_client.request( 'host.get', 
@@ -263,7 +309,7 @@ hosts.each do |host,data|
                     }
                 ],
                 'groups' => [
-                    { 'groupid' => '100100000000002' }
+                    { 'groupid' => zcollective_hostgroup }
                 ],
                 'templates' => templates_to_add
             )
