@@ -20,32 +20,32 @@ options = {}
 optparse = OptionParser.new do |opts|
 
     options[:zabbix_api_url] = 'http://localhost/zabbix/api_jsonrpc.php'
-    opts.on('z', '--zabbix-api-url url', 'JSON-RPC endpoint for zabbix server') do |u|
+    opts.on('-z', '--zabbix-api-url url', 'JSON-RPC endpoint for zabbix server') do |u|
         options[:zabbix_api_url] = u
     end
 
     options[:zabbix_user] = 'Admin'
-    opts.on('u', '--zabbix-user user', 'Zabbix API username') do |u|
+    opts.on('-u', '--zabbix-user user', 'Zabbix API username') do |u|
         options[:zabbix_user] = u
     end
 
     options[:zabbix_pass] = 'zabbix'
-    opts.on('p', '--zabbix-pass pass', 'Zabbix API password') do |p|
+    opts.on('-p', '--zabbix-pass pass', 'Zabbix API password') do |p|
         options[:zabbix_pass] = p
     end
 
     options[:debug] = false
-    opts.on('d', '--debug', 'Enable debugging') do
+    opts.on('-d', '--debug', 'Enable debugging') do
         options[:debug] = true
     end
 
     options[:noop] = false
-    opts.on('n', '--noop', 'Don\'t make changes') do
+    opts.on('-n', '--noop', 'Don\'t make changes') do
         options[:noop] = true
     end
 
     options[:interface_cidr] = '0.0.0.0/0'
-    opts.on('c', '--interface-cidr CIDR', 'Only consider interfaces matching the given CIDR') do |c|
+    opts.on('-c', '--interface-cidr CIDR', 'Only consider interfaces matching the given CIDR') do |c|
         options[:interface_cidr] = c
     end
 
