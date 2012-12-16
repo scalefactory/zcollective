@@ -207,7 +207,7 @@ include MCollective::RPC
 
 mc = rpcclient("rpcutil", :debug => true)
 zt_mc = rpcclient("zabbix_template", :debug => true)
-#zt_mc.progress = false
+zt_mc.progress = false
 mc.progress = false
 mc.discover.sort.each do |host|
 
