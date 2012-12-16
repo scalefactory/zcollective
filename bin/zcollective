@@ -206,8 +206,9 @@ end
 include MCollective::RPC
 
 mc = rpcclient("rpcutil", :debug => true)
+zt_mc = rpcclient("zabbix_template", :debug => true)
+#zt_mc.progress = false
 mc.progress = false
-
 mc.discover.sort.each do |host|
 
     # MCollective returns FQDN name, and we probably want to use the short
@@ -255,12 +256,23 @@ mc.discover.sort.each do |host|
 
     log.debug("\tIP #{ip}")
 
+    # Find whether we have to use different templates in Zabbix for any of
+    # the modules on this host
+    template_aliases = zt_mc.custom_request( "templates", {},
+        host,
+        {"identity" => host}
+    ).first
+
+    if (!template_aliases.nil?)
+        hosts[ short_hostname ][:aliases]           = template_aliases[:data][:aliases]
+    end
+
     hosts[ short_hostname ][:mcollective][:ip]      = ip
     hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
 
 end
 
-mc.disconnect
+zt_mc.disconnect
 
 ############################################################################
 # Rationalise the two datasets
@@ -286,6 +298,17 @@ hosts.each do |host,data|
 
         templates_to_add = []
         data[:mcollective][:classes].each do |template|
+            # if the class name has a :: in it, replace it with an underscore
+            # for the purposes of finding a template with that name
+            template = template.sub(/::/, '_')
+
+            # if we have an alias for this template, use that instead
+            if ( data[:aliases].has_key?( template ) )
+                classname = template
+                template = data[:aliases][ template ]
+                log.debug("\tUsing alias #{template} for #{classname}")
+            end
+
             next unless zabbix_templates.has_key?( template )
             template_id = zabbix_templates[ template ]
             log.debug("\tWill be adding template #{template} ID #{template_id}")
@@ -366,6 +389,16 @@ hosts.each do |host,data|
         data[:mcollective][:classes].each do |template|
 
             # Ignore any that don't match the name of a zabbix template
+            # Again, replace :: with _ to match template names
+            template = template.sub(/::/, '_')
+
+            # if we have an alias for this template, use that instead
+            if ( data[:aliases].has_key?( template ) )
+                classname = template
+                template = data[:aliases][ template ]
+                log.debug("\tUsing alias #{template} for #{classname}")
+            end
+
             next unless zabbix_templates.has_key?( template )
 
             log.debug("\tHas mcollective class #{template} matching a zabbix template")
