@@ -206,8 +206,14 @@ end
 include MCollective::RPC
 
 mc = rpcclient("rpcutil", :debug => true)
-zt_mc = rpcclient("zabbix_template", :debug => true)
-zt_mc.progress = false
+begin
+zt_mc = rpcclient("zabbix_template", :exit_on_failure => false)
+rescue Exception
+    log.warn("No zabbix_template mcollective rpc agent found")
+end
+if (!zt_mc.nil?)
+    zt_mc.progress = false
+end
 mc.progress = false
 mc.discover.sort.each do |host|
 
@@ -257,11 +263,14 @@ mc.discover.sort.each do |host|
     log.debug("\tIP #{ip}")
 
     # Find whether we have to use different templates in Zabbix for any of
-    # the modules on this host
-    template_aliases = zt_mc.custom_request( "templates", {},
-        host,
-        {"identity" => host}
-    ).first
+    # the modules on this host. Only do this if we were successfully able to
+    # create the zabbix_template mcollective rpcclient.
+    if (!zt_mc.nil?)
+        template_aliases = zt_mc.custom_request( "templates", {},
+            host,
+            {"identity" => host}
+        ).first
+    end
 
     if (!template_aliases.nil?)
         hosts[ short_hostname ][:aliases]           = template_aliases[:data][:aliases]
@@ -272,7 +281,7 @@ mc.discover.sort.each do |host|
 
 end
 
-zt_mc.disconnect
+mc.disconnect
 
 ############################################################################
 # Rationalise the two datasets
