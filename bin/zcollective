@@ -49,6 +49,11 @@ optparse = OptionParser.new do |opts|
         options[:interface_cidr] = c
     end
 
+    options[:connect_by_ip] = 0
+    opts.on('--connect-by-ip','Configure newly added hosts to connect by IP address instead of DNS') do
+        options[:connect_by_ip] = 1
+    end
+
 end
 
 begin
@@ -341,7 +346,7 @@ hosts.each do |host,data|
                     {
                         'type'  => 1,
                         'main'  => 1,
-                        'useip' => 1,
+                        'useip' => options[:connect_by_ip],
                         'ip'    => data[:mcollective][:ip],
                         'dns'   => host,
                         'port'  => '10050'

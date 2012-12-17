@@ -42,6 +42,8 @@ Usage: zcollective [options]
         --debug                      Enable debugging
         --noop                       Don't make changes
         --interface-cidr CIDR        Only consider interfaces matching the given CIDR
+        --connect-by-ip              When adding new hosts, get Zabbix to connect to those hosts by
+                                     IP address instead of hostname
 ```
 
 The URL, username and password options are self-explanatory.
