@@ -14,11 +14,23 @@ It then pulls a list of hosts, interfaces and templates for each host configured
 
 Then it uses MCollective to build a view of the hosts on your infrastructure.  For each host, it fetches a name, some IP address details and a list of configuration management classes associated with the node.
 
-Hosts that are found by MCollective but are not monitored will be added to Zabbix, and linked to any templates that match configuration management class names.
+Hosts that are found by MCollective but are not monitored will be added to Zabbix, and linked to any templates that match configuration management class names.  Double-colons are substituted for underscores when matching configuration management class names to template names.
 
 Hosts found in Zabbix but not by MCollective are left alone, but reported on.
 
 Hosts found in both Zabbix and MCollective will be linked to any missing templates.  IP address mismatches for the hostname are reported on, but no changes are made.
+
+## Template Aliasing
+
+Optionally, ZCollective can use the ```zabbix_template``` MCollective plugin to interrogate each host for a list of alternative templates to use for configuration management classes installed on that host.
+
+This can be very useful, for example, to use a different template on a specific host, if it is a replication master rather than a slave. It can also be handy, if you have a class that is installed on every host, to use that to ensure the ```Template OS Linux``` Zabbix template is linked to that host by ZCollective.
+
+To configure a template alias on a host, put a file in ```/etc/zabbix/template_aliases/``` named after the template you wish to be aliased. That file should contain a single line, which is the name of the Zabbix template that should be used instead.
+
+For example, we have a ```scalefactory::packages``` Puppet module which is installed on all of our hosts. In that module, we write out a file ```/etc/zabbix/template_aliases/scalefactory_packages``` which contains the text ```Template OS Linux```. This ensures that this standard Zabbix template is linked to all hosts.
+
+Use of the ```zabbix_template``` plugin is completely optional, and ZCollective will work perfectly without it.
 
 ## Usage
 
