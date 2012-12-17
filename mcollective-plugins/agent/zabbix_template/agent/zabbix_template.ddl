@@ -4,7 +4,7 @@ metadata :name        => "zabbix_template",
          :license     => "(c)2012 The Scale Factory Ltd.",
          :version     => "0.1",
          :url         => "https://github.com/scalefactory/zcollective",
-         :timeout     => 5
+         :timeout     => 3
 
 action "templates", :description => "Return Zabbix Template Aliases for this host" do
    display :always
