@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
     s.name        = 'zcollective'
-    s.version     = '0.0.2'
-    s.date        = '2012-11-27'
+    s.version     = '0.0.4'
+    s.date        = '2012-12-17'
     s.summary     = 'Zabbix/MCollective integration'
     s.description = 'ZCollective is a tool used to configure Zabbix using data discovered using MCollective.'
     s.authors     = [ 'Jon Topper' ]
@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
         'lib/zcollective/zabbixclient.rb',
         'bin/zcollective'
     ]
-    s.add_dependency "netaddr"
+    s.add_runtime_dependency 'netaddr', '>= 1.5.0'
     s.executables << 'zcollective'
     s.homepage    = 'http://github.com/scalefactory/zcollective'
     s.require_path = 'lib'
