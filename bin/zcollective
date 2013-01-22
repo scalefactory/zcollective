@@ -86,6 +86,8 @@ zabbix_client = ZCollective::ZabbixClient.new(
 
 log.debug( "Connected and authenticated" )
 
+
+
 ############################################################################
 # Fetch list of zabbix templates
 
@@ -109,6 +111,7 @@ end
 #
 nested_hash = lambda {|hash, key| hash[key] = Hash.new(&nested_hash)}
 hosts = Hash.new(&nested_hash)
+
 
 
 ############################################################################
@@ -155,6 +158,7 @@ if zcollective_hostgroup.nil?
 end
 
 log.debug("ZCollective hostgroup: #{zcollective_hostgroup}")
+
 
 
 ############################################################################
@@ -204,6 +208,8 @@ zabbix_client.request( 'host.get',
     end
 
 end
+
+
 
 ############################################################################
 # Iterate through MCollective hosts
@@ -267,18 +273,19 @@ mc.discover.sort.each do |host|
 
     log.debug("\tIP #{ip}")
 
-    # Find whether we have to use different templates in Zabbix for any of
-    # the modules on this host. Only do this if we were successfully able to
-    # create the zabbix_template mcollective rpcclient.
+    # Find whether we have to use different or any extra templates in Zabbix
+    # for any of the modules on this host. Only do this if we were
+    # successfully able to create the zabbix_template mcollective rpcclient.
     if (!zt_mc.nil?)
-        template_aliases = zt_mc.custom_request( "templates", {},
+        host_template_info = zt_mc.custom_request( "templates", {},
             host,
             {"identity" => host}
         ).first
     end
 
-    if (!template_aliases.nil?)
-        hosts[ short_hostname ][:aliases]           = template_aliases[:data][:aliases]
+    if (!host_template_info.nil?)
+        hosts[ short_hostname ][:aliases]           = host_template_info[:data][:aliases]
+        hosts[ short_hostname ][:extras]            = host_template_info[:data][:extras]
     end
 
     hosts[ short_hostname ][:mcollective][:ip]      = ip
@@ -288,10 +295,15 @@ end
 
 mc.disconnect
 
+
+
 ############################################################################
-# Rationalise the two datasets
+# Rationalise the two datasets, iterating over the hosts and carrying out
+# the appropriate actions
 
 hosts.each do |host,data|
+
+
 
     ###### Condition 1 #############################################
     #
@@ -315,10 +327,10 @@ hosts.each do |host,data|
             # if the class name has a :: in it, replace it with an underscore
             # for the purposes of finding a template with that name
             template = template.sub(/::/, '_')
+            classname = template
 
             # if we have an alias for this template, use that instead
             if ( data[:aliases].has_key?( template ) )
-                classname = template
                 template = data[:aliases][ template ]
                 log.debug("\tUsing alias #{template} for #{classname}")
             end
@@ -327,6 +339,21 @@ hosts.each do |host,data|
             template_id = zabbix_templates[ template ]
             log.debug("\tWill be adding template #{template} ID #{template_id}")
             templates_to_add.push( { 'templateid' => template_id } )
+
+            # if we have any extra zabbix templates to add for this class
+            # then add them to the array of templates to add for this host
+            if ( data[:extras].has_key?( classname ) )
+
+                extra_templates = data[:extras][ classname ].split(/,/)
+
+                extra_templates.each do |extra_template|
+                    next unless zabbix_templates.has_key?( extra_template )
+                    template_id = zabbix_templates[ extra_template ]
+                    log.debug("\tWill be adding template #{extra_template} ID #{template_id} for #{classname}")
+                    templates_to_add.push( { 'templateid' => template_id } )
+                end
+
+            end
         end
 
         if options[:noop]
@@ -369,6 +396,8 @@ hosts.each do |host,data|
 
     end
 
+
+
     ###### Condition 2 #############################################
     # If zabbix contains a host that mcollective knows nothing about
     #  we leave it alone but report it.
@@ -378,6 +407,8 @@ hosts.each do |host,data|
         log.warn( "Host #{host} found in zabbix but not by mcollective" )
 
     end
+
+
 
     ###### Condition 3 #############################################
     # Hosts in zabbix and mcollective are checked to ensure that 
@@ -396,7 +427,8 @@ hosts.each do |host,data|
             )
         end
 
-        templates_to_add = []
+        templates_should_have = []
+        templates_need_adding = []
 
         # Iterate through the classes mcollective lists for the host
 
@@ -405,38 +437,58 @@ hosts.each do |host,data|
             # Ignore any that don't match the name of a zabbix template
             # Again, replace :: with _ to match template names
             template = template.sub(/::/, '_')
+            classname = template
 
             # if we have an alias for this template, use that instead
             if ( data[:aliases].has_key?( template ) )
-                classname = template
                 template = data[:aliases][ template ]
                 log.debug("\tUsing alias #{template} for #{classname}")
             end
 
             next unless zabbix_templates.has_key?( template )
+            templates_should_have.push( template )
+            log.debug("\tHas mcollective class #{classname} matching a zabbix template")
 
-            log.debug("\tHas mcollective class #{template} matching a zabbix template")
+            # if we have any extra zabbix templates to add for this class
+            # then add them to the array of templates to add for this host
+            if ( data[:extras].has_key?( classname ) )
 
-            if data[:zabbix][:templates].index( template )
+                extra_templates = data[:extras][ classname ].split(/,/)
 
-                # The host in zabbix is already linked to a template with the name
-                #  of this class.  We do nothing here.
-                #
-                log.debug("\tZabbix host already linked to a template for this class")
+                extra_templates.each do |extra_template|
+                    next unless zabbix_templates.has_key?( extra_template )
+                    template_id = zabbix_templates[ extra_template ]
+                    log.debug("\tHas extra template #{extra_template} defined for #{classname}")
+                    templates_should_have.push( extra_template )
+                end
 
-            else
+            end
 
-                # Zabbix shows that although it knows about a template with this class
-                #  name, the host in question isn't linked to it.  We add this
-                #  template to a list of those that are missing in zabbix.
+            # iterate over the templates that we should have, and if they're
+            # not already linked, add them to the list of templates which
+            # need adding for this host.
+            templates_should_have.each do |tpl_should_have|
 
-                log.info("Zabbix #{host} not linked to a template for #{template}")
-                templates_to_add.push( { 'templateid' => zabbix_templates[ template ] } )
+                if data[:zabbix][:templates].index( tpl_should_have )
+
+                    # The host in zabbix is already linked to this template
+                    log.debug("\tZabbix host already linked to template #{tpl_should_have}")
+
+                else
+    
+                    # Zabbix shows that although it knows about this template
+                    # the host in question isn't linked to it.  We add this
+                    # template to a list of those that are missing in zabbix.
+                    log.info("Zabbix #{host} not linked to template #{tpl_should_have}")
+                    templates_need_adding.push( { 'templateid' => zabbix_templates[ tpl_should_have ] } )
+
+                end
+
             end
 
         end
 
-        if templates_to_add.count > 0
+        if templates_need_adding.count > 0
 
             if options[:noop]
 
@@ -448,7 +500,7 @@ hosts.each do |host,data|
                 #  link the zabbix host with these.
 
                 zabbix_client.request( 'template.massadd',
-                    'templates' => templates_to_add,
+                    'templates' => templates_need_adding,
                     'hosts'     => { 'hostid' => data[:zabbix][:hostid] }
                 )
 

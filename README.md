@@ -22,13 +22,17 @@ Hosts found in both Zabbix and MCollective will be linked to any missing templat
 
 ## Template Aliasing
 
-Optionally, ZCollective can use the ```zabbix_template``` MCollective plugin to interrogate each host for a list of alternative templates to use for configuration management classes installed on that host.
+Optionally, ZCollective can use the ```zabbix_template``` MCollective plugin to interrogate each host for a list of alternative and extra templates to use for configuration management classes installed on that host.
 
-This can be very useful, for example, to use a different template on a specific host, if it is a replication master rather than a slave. It can also be handy, if you have a class that is installed on every host, to use that to ensure the ```Template OS Linux``` Zabbix template is linked to that host by ZCollective.
+Aliasing can be very useful, for example, to use a different template on a specific host, if it is a replication master rather than a slave. It can also be handy, if you have a class that is installed on every host, to use that to ensure the ```Template OS Linux``` Zabbix template is linked to that host by ZCollective.
 
-To configure a template alias on a host, put a file in ```/etc/zabbix/template_aliases/``` named after the template you wish to be aliased. That file should contain a single line, which is the name of the Zabbix template that should be used instead.
+To configure a template alias on a host, put a file in ```/etc/zabbix/template_aliases/``` named after the configuration management class you wish to be aliased. That file should contain a single line, which is the name of the Zabbix template that should be used instead.
 
 For example, we have a ```scalefactory::packages``` Puppet module which is installed on all of our hosts. In that module, we write out a file ```/etc/zabbix/template_aliases/scalefactory_packages``` which contains the text ```Template OS Linux```. This ensures that this standard Zabbix template is linked to all hosts.
+
+To specify extra templates to be linked to the host for a given module, put a file in ```/etc/zabbix/template_extras/``` named after the configuration management class. Add extra templates, one per line, to this file.
+
+This can be useful to add monitoring for optional features of a configuration management class. For example, our Apache puppet module contains a Zabbix template which monitors port 80 by default. If SSL is turned on, we use this extra template feature to ensure that checks are also made for Apache listening on port 443.
 
 Use of the ```zabbix_template``` plugin is completely optional, and ZCollective will work perfectly without it.
 
