@@ -20,7 +20,7 @@ Hosts found in Zabbix but not by MCollective are left alone, but reported on.
 
 Hosts found in both Zabbix and MCollective will be linked to any missing templates.  IP address mismatches for the hostname are reported on, but no changes are made.
 
-## Template Aliasing
+## Template Aliasing and Extra Templates
 
 Optionally, ZCollective can use the ```zabbix_template``` MCollective plugin to interrogate each host for a list of alternative and extra templates to use for configuration management classes installed on that host.
 
