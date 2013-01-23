@@ -113,3 +113,6 @@ Giving a password on the commandline isn't very secure.
 
 ZCollective has only been tested against a small number of use cases - use it at your own risk.
 
+## License
+
+ZCollective, and the ```zabbix_template``` mcollective plugin, are both BSD licensed.
