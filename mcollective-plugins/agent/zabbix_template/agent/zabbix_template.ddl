@@ -1,6 +1,6 @@
 metadata :name        => "zabbix_template",
          :description => "Zabbix Template Name discovery service",
-         :author      => "Mike Griffiths",
+         :author      => "The Scale Factory Ltd",
          :license     => "BSD",
          :version     => "0.1",
          :url         => "https://github.com/scalefactory/zcollective",
