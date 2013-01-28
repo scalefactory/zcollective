@@ -452,12 +452,15 @@ hosts.each do |host,data|
             )
         end
 
-        templates_should_have = []
         templates_need_adding = []
 
         # Iterate through the classes mcollective lists for the host
 
         data[:mcollective][:classes].each do |template|
+
+            # templates_should_have is a list of templates that zabbix should have
+            # for this particular host, for this class.
+            templates_should_have = []
 
             # Ignore any that don't match the name of a zabbix template
             # Again, replace :: with _ to match template names
@@ -504,7 +507,7 @@ hosts.each do |host,data|
                     # Zabbix shows that although it knows about this template
                     # the host in question isn't linked to it.  We add this
                     # template to a list of those that are missing in zabbix.
-                    log.info("Zabbix #{host} not linked to template #{tpl_should_have}")
+                    log.info("\tZabbix #{host} not linked to template #{tpl_should_have}")
                     templates_need_adding.push( { 'templateid' => zabbix_templates[ tpl_should_have ] } )
 
                 end
