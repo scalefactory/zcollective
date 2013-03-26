@@ -53,7 +53,7 @@ Usage: zcollective [options]
 
 The URL, username and password options are self-explanatory.
 
-```--interface-CIDR```, if passed will filter the interfaces MCollective finds by CIDR range.  This is useful for multihomed hosts where you only want to monitor the interface on an administrative network.
+```--interface-cidr```, if passed will filter the interfaces MCollective finds by CIDR range.  This is useful for multihomed hosts where you only want to monitor the interface on an administrative network.
 
 ```--debug``` will generate a lot of console noise, but helps with working out what's going on.
 
