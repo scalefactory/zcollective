@@ -137,6 +137,8 @@ end
 nested_hash = lambda {|hash, key| hash[key] = Hash.new(&nested_hash)}
 hosts = Hash.new(&nested_hash)
 
+# An array of collectives to create hostgroups of:
+collectives = Array.new
 
 
 ############################################################################
@@ -315,11 +317,67 @@ mc.discover.sort.each do |host|
 
     hosts[ short_hostname ][:mcollective][:ip]      = ip
     hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
+    hosts[ short_hostname ][:mcollective][:collectives] = inventory[:data][:collectives]
+
+    collectives << hosts[ short_hostname ][:mcollective][:collectives]
 
 end
 
 mc.disconnect
 
+###########################################################################
+# Fetch list of zabbix groups & Create hosts groups of discoverred
+# collectives, to add hosts to later
+
+log.debug("collectives: #{collectives.flatten.inspect}")
+log.debug("uniq collectives: #{collectives.flatten.uniq.inspect}")
+
+collectives_to_hostgroups = collectives.flatten.uniq
+
+collectives_to_hostgroups.each do | collective |
+
+    log.debug( "Fetching list of zabbix hostgroups" )
+
+    collective_hostgroup_name = "#{collective}"
+    collective_hostgroup_id   = nil
+
+    zabbix_client.request( 'hostgroup.get',
+        'search' => '',
+        'output' => 'extend'
+    ).each do |hostgroup|
+
+        log.debug("\tName: #{hostgroup['name']} ID: #{hostgroup['groupid']}")
+
+        if hostgroup['name'] == collective_hostgroup_name
+            collective_hostgroup_id = hostgroup['groupid']
+        end
+
+    end
+
+    if collective_hostgroup_id.nil?
+
+        if options[:noop]
+
+            log.debug("No #{collective} hostgroup, but not creating as " <<
+                "we're in --noop mode")
+        else
+
+            log.debug("No #{collective} hostgroup: creating")
+
+            resp = zabbix_client.request( 'hostgroup.create',
+                'name' => collective
+            )
+
+            collective_hostgroup_id = resp['groupids'].first
+
+        end
+
+    end
+
+    log.info("New hostgroup: #{collective}")
+    log.info("New hostgroup's ID: #{collective_hostgroup_id}")
+
+end
 
 
 ############################################################################
@@ -381,6 +439,24 @@ hosts.each do |host,data|
             end
         end
 
+        ### get list of current hostgroup, so we can add to the correct groups by ID
+        groups_by_id = []
+        zabbix_client.request( 'hostgroup.get',
+            'search' => '',
+            'output' => 'extend'
+        ).each do |hostgroup|
+
+            host_group_hash = {}
+
+            log.debug("\tName: #{hostgroup['name']} ID: #{hostgroup['groupid']}")
+
+            if data[:mcollective][:collectives].include? hostgroup['name']
+                host_group_hash['groupid'] = hostgroup['groupid']
+                groups_by_id << host_group_hash
+            end
+
+        end
+
         if options[:noop]
 
             log.info("--noop passed - not making changes")
@@ -404,9 +480,7 @@ hosts.each do |host,data|
                         'port'  => '10050'
                     }
                 ],
-                'groups' => [
-                    { 'groupid' => zcollective_hostgroup }
-                ],
+                'groups' => groups_by_id,
                 'templates' => templates_to_add
             )
 
