@@ -38,7 +38,7 @@ Use of the ```zabbix_template``` plugin is completely optional, and ZCollective 
 
 ## Hostgroups based on collectives
 
-
+Any subcollectives declared in mcollective's client.cfg will be added as hostgroups to zabbix; the machines discovered via mcollective will be assigned to these hostgroups.
 
 
 ## Usage
