@@ -36,6 +36,11 @@ This can be useful to add monitoring for optional features of a configuration ma
 
 Use of the ```zabbix_template``` plugin is completely optional, and ZCollective will work perfectly without it.
 
+## Hostgroups based on collectives
+
+Any subcollectives declared in mcollective's client.cfg will be added as hostgroups to zabbix; the machines discovered via mcollective will be assigned to these hostgroups.
+
+
 ## Usage
 
 ```
@@ -117,6 +122,11 @@ ZCollective currently doesn't know how to cope with hosts that are only visible 
 Giving a password on the commandline isn't very secure.
 
 ZCollective has only been tested against a small number of use cases - use it at your own risk.
+
+## Changelog
+
+23/08/2013 - ZCollective will now create hostgroups in zabbix based on collectives it's discovered; it will then assign hosts to these hostgroups, based on facts it's discovered via mcollective. 
+
 
 ## License
 
