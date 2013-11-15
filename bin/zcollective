@@ -413,7 +413,7 @@ hosts.each do |host,data|
             classname = template
 
             # if we have an alias for this template, use that instead
-            if ( data[:aliases].has_key?( template ) )
+            if ( ! data[:aliases].nil? and data[:aliases].has_key?( template ) )
                 template = data[:aliases][ template ]
                 log.debug("\tUsing alias #{template} for #{classname}")
             end
@@ -425,7 +425,7 @@ hosts.each do |host,data|
 
             # if we have any extra zabbix templates to add for this class
             # then add them to the array of templates to add for this host
-            if ( data[:extras].has_key?( classname ) )
+            if ( ! data[:extras].nil? and data[:extras].has_key?( classname ) )
 
                 extra_templates = data[:extras][ classname ].split(/,/)
 
@@ -542,7 +542,7 @@ hosts.each do |host,data|
             classname = template
 
             # if we have an alias for this template, use that instead
-            if ( data[:aliases].has_key?( template ) )
+            if ( ! data[:aliases].nil? and data[:aliases].has_key?( template ) )
                 template = data[:aliases][ template ]
                 log.debug("\tUsing alias #{template} for #{classname}")
             end
@@ -553,7 +553,7 @@ hosts.each do |host,data|
 
             # if we have any extra zabbix templates to add for this class
             # then add them to the array of templates to add for this host
-            if ( data[:extras].has_key?( classname ) )
+            if ( ! data[:extras].nil? and data[:extras].has_key?( classname ) )
 
                 extra_templates = data[:extras][ classname ].split(/,/)
 
