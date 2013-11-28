@@ -79,6 +79,16 @@ optparse = OptionParser.new do |opts|
         options[:connect_by_ip] = 1
     end
 
+    options[:lockfile] = "/tmp/zcollective.lock"
+    opts.on('--lockfile=f', 'Use alternative lock file') do |f|
+        options[:lockfile] = f
+    end
+
+    options[:timeout] = 60
+    opts.on('--timeout=t', 'Time out after number of seconds') do |t|
+        options[:timeout] = t.to_i
+    end
+
 end
 
 begin
@@ -100,6 +110,36 @@ if options[:debug]
 else
     log.level = Logger::INFO
 end
+
+trap("ALRM") do
+    log.info("Timeout after #{options[:timeout]}s")
+    exit 4
+end
+
+Thread.new {
+    sleep options[:timeout]
+    Process.kill( "ALRM", Process.pid )
+}
+
+if File.exist?(options[:lockfile])
+
+    other_pid = File.read(options[:lockfile]).to_i
+
+    begin
+        Process.getpgid( other_pid )
+        log.info("Another zcollective process (#{other_pid}) holds the lock")
+        exit 3  
+    rescue Errno::ESRCH
+        log.info("Deleting stale lock file")
+        FileUtils.remove_file(options[:lockfile], true)
+    end
+
+end
+
+File.open( options[:lockfile], File::CREAT | File::EXCL | File::WRONLY ) do |o|
+    o.write(Process.pid)
+end
+
 log.debug( "Connecting to Zabbix RPC service" )
 
 zabbix_client = ZCollective::ZabbixClient.new(
@@ -615,3 +655,5 @@ hosts.each do |host,data|
     end
 
 end
+
+FileUtils.remove_file(options[:lockfile], true)
