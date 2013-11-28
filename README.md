@@ -54,6 +54,8 @@ Usage: zcollective [options]
         --connect-by-ip              When adding new hosts, get Zabbix to connect to those hosts by
                                      IP address instead of hostname. Useful in scenarios where you
                                      don't have control over your DNS.
+        --lockfile=f                 Use alternative lock file
+        --timeout=t                  Time out after number of seconds
 ```
 
 The URL, username and password options are self-explanatory.
@@ -124,6 +126,8 @@ Giving a password on the commandline isn't very secure.
 ZCollective has only been tested against a small number of use cases - use it at your own risk.
 
 ## Changelog
+
+28/11/2013 - Support for --timeout and --lockfile added
 
 23/08/2013 - ZCollective will now create hostgroups in zabbix based on collectives it's discovered; it will then assign hosts to these hostgroups, based on facts it's discovered via mcollective. 
 
