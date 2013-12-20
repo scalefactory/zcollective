@@ -26,6 +26,7 @@
 require 'json'
 require 'net/http'
 require 'logger'
+require 'ostruct'
 
 module ZCollective
 
@@ -83,7 +84,8 @@ module ZCollective
             json = request_json( method, *args )
 
             uri  = URI.parse( @options[:url] )
-            http = Net::HTTP::new( uri.host, uri.port )
+            proxy = ENV['http_proxy'] ? URI.parse(ENV['http_proxy']) : OpenStruct.new
+            http = Net::HTTP::Proxy(proxy.host, proxy.port).new( uri.host, uri.port )
 
             request = Net::HTTP::Post.new( uri.request_uri )
             request.add_field( 'Content-Type', 'application/json-rpc' )
