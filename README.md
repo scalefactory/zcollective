@@ -105,7 +105,7 @@ I, [2012-11-21T16:49:00.184213 #10272]  INFO -- : Added missing templates to ljn
 
 Beware of running zcollective against puppet runs implemented using the 'puppet apply' runmode: due to a known issue/bug in puppet (http://projects.puppetlabs.com/issues/7917),
 the classes.txt file, which mcollective (and by extention zcollective) uses to classify machines, isn't written. Only use zcollective on infrastructures where you're using
-the 'puppet agent' runmode, or find another way to populate classes.txt so that mcollective can correctly classify your nodes.
+the 'puppet agent' runmode, or find another way to populate classes.txt (eg using the `--write-catalog-summary` switch in new versions of puppet) so that mcollective can correctly classify your nodes.
 
 ## Assumptions
 
