@@ -68,7 +68,7 @@ The URL, username and password options are self-explanatory.
 
 Passing ```--noop``` will report on the changes to be made, but not make any.
 
-Using ```--host``` allows you to add a host outside of the scope of mcollective, for example an Amazon RDS or Elasticache instance, to Zabbix. Passing the ```--template``` switch at the same time will add a template to that host in Zabbix.
+Using ```--host``` allows you to add a host outside of the scope of mcollective, for example an Amazon RDS or Elasticache instance, to Zabbix. Passing the ```--template``` switch at the same time will add a template to that host in Zabbix. When using the ```--host``` option, the given host will be added to the "ZCollective Discovered Hosts" hostgroup only.
 
 
 ## Example
