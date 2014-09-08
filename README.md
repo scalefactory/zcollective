@@ -131,6 +131,8 @@ ZCollective has only been tested against a small number of use cases - use it at
 
 ## Changelog
 
+08/09/2014 - Support for --host and --template switch for manual addition of hosts.
+
 28/11/2013 - Support for --timeout and --lockfile added
 
 23/08/2013 - ZCollective will now create hostgroups in zabbix based on collectives it's discovered; it will then assign hosts to these hostgroups, based on facts it's discovered via mcollective. 
