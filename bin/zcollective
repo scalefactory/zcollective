@@ -75,7 +75,7 @@ optparse = OptionParser.new do |opts|
     end
 
     options[:connect_by_ip] = 0
-    opts.on('--connect-by-ip','Configure newly added hosts to connect by IP address instead of DNS') do
+    opts.on('--connect-by-ip','Configure newly added hosts to connect by IP address instead of DNS. Not valid with --host.') do
         options[:connect_by_ip] = 1
     end
 
@@ -89,11 +89,33 @@ optparse = OptionParser.new do |opts|
         options[:timeout] = t.to_i
     end
 
+    options[:host]
+    opts.on('-h', '--host hostname', 'Skip mcollective host discovery, use the given host') do |h|
+        options[:host] = h
+    end
+
+    options[:template]
+    opts.on('-t', '--template template', 'Add the given template to the host specified with --host.') do |t|
+        options[:template] = t
+    end
+
 end
 
 begin
 
     optparse.parse!
+
+    if !options[:host] and options[:template]
+        $stderr.puts "Can't use --template without --host"
+        $stderr.puts optparse
+        exit 2
+    end
+
+    if options[:host] and options[:connect_by_ip] == 1
+        $stderr.puts "Can't use --connect-by-ip with --host"
+        $stderr.puts optparse
+        exit 2
+    end
 
 rescue OptionParser::InvalidOption, OptionParser::MissingArgument
 
@@ -281,89 +303,105 @@ end
 ############################################################################
 # Iterate through MCollective hosts
 
-include MCollective::RPC
+if options[:host]
 
-mc = rpcclient("rpcutil", :debug => true)
-begin
-zt_mc = rpcclient("zabbix_template", :exit_on_failure => false)
-rescue Exception
-    log.warn("No zabbix_template mcollective rpc agent found")
-end
-if (!zt_mc.nil?)
-    zt_mc.progress = false
-end
-mc.progress = false
-mc.discover.sort.each do |host|
+    short_hostname = options[:host].split('.').first
+    hosts[ short_hostname ][ :mcollective ][:ip] = ''
+    if options[:template]
+        hosts[ short_hostname][ :mcollective ][:classes] = [ options[:template] ]
+    else
+        hosts[ short_hostname ][ :mcollective ][:classes] = []
+    end
 
-    # MCollective returns FQDN name, and we probably want to use the short
-    #  form name in zabbix.
+else
+
+    include MCollective::RPC
+
+    mc = rpcclient("rpcutil", :debug => true)
+    begin
+    zt_mc = rpcclient("zabbix_template", :exit_on_failure => false)
+    rescue Exception
+        log.warn("No zabbix_template mcollective rpc agent found")
+    end
+    if (!zt_mc.nil?)
+        zt_mc.progress = false
+    end
+    mc.progress = false
+    mc.discover.sort.each do |host|
+
+        # MCollective returns FQDN name, and we probably want to use the short
+        # form name in zabbix.
     
-    short_hostname = host.split('.').first
+        short_hostname = host.split('.').first
 
-    log.debug("Host: #{short_hostname} (#{host})")
+        log.debug("Host: #{short_hostname} (#{host})")
 
-    # Get inventory details for each host
-    inventory = mc.custom_request( "inventory", {}, host,
-        { "identity" => host }
-    ).first
+        # Get inventory details for each host
+        inventory = mc.custom_request( "inventory", {}, host,
+            { "identity" => host }
+        ).first
 
-    # Work through network interfaces reported by Facter and find the first
-    #  which matches the CIDR passed on the commandline.  Use that to talk
-    #  zabbix to.
+        # Work through network interfaces reported by Facter and find the first
+        # which matches the CIDR passed on the commandline.  Use that to talk
+        # zabbix to.
 
-    cidr_to_match = NetAddr::CIDR.create( options[:interface_cidr] )
-    ip = nil
+        cidr_to_match = NetAddr::CIDR.create( options[:interface_cidr] )
+        ip = nil
 
-    inventory[:data][:facts].sort.each do |key,value|
+        inventory[:data][:facts].sort.each do |key,value|
 
-        next unless key.match(/^ipaddress_/)
+            next unless key.match(/^ipaddress_/)
 
-        log.debug("Potential IP interface #{key} with IP #{value}")
+            log.debug("Potential IP interface #{key} with IP #{value}")
 
-        ip_cidr = NetAddr::CIDR.create( value )
-        if ip_cidr.is_contained?( cidr_to_match) 
+            ip_cidr = NetAddr::CIDR.create( value )
+            if ip_cidr.is_contained?( cidr_to_match) 
 
-           log.debug("IP matches CIDR #{options[:interface_cidr]}")
+                log.debug("IP matches CIDR #{options[:interface_cidr]}")
 
-           ip = value 
-           break
+                ip = value 
+                break
 
-        else
-            log.debug("IP doesn't match CIDR")
+            else
+                log.debug("IP doesn't match CIDR")
+            end
+
         end
 
+        unless ip
+            raise "Host #{host} has no IP matching the target CIDR #{options[:interface_cidr]}" 
+        end
+
+        log.debug("\tIP #{ip}")
+
+        # Find whether we have to use different or any extra templates in Zabbix
+        # for any of the modules on this host. Only do this if we were
+        # successfully able to create the zabbix_template mcollective rpcclient.
+        if (!zt_mc.nil?)
+            host_template_info = zt_mc.custom_request( "templates", {},
+                host,
+                {"identity" => host}
+            ).first
+        end
+
+        if (!host_template_info.nil?)
+            hosts[ short_hostname ][:aliases]           = host_template_info[:data][:aliases]
+            hosts[ short_hostname ][:extras]            = host_template_info[:data][:extras]
+        end
+
+        hosts[ short_hostname ][:mcollective][:ip]      = ip
+        hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
+        hosts[ short_hostname ][:mcollective][:collectives] = inventory[:data][:collectives]
+
+        collectives << hosts[ short_hostname ][:mcollective][:collectives]
+
     end
 
-    unless ip
-        raise "Host #{host} has no IP matching the target CIDR #{options[:interface_cidr]}" 
-    end
-
-    log.debug("\tIP #{ip}")
-
-    # Find whether we have to use different or any extra templates in Zabbix
-    # for any of the modules on this host. Only do this if we were
-    # successfully able to create the zabbix_template mcollective rpcclient.
-    if (!zt_mc.nil?)
-        host_template_info = zt_mc.custom_request( "templates", {},
-            host,
-            {"identity" => host}
-        ).first
-    end
-
-    if (!host_template_info.nil?)
-        hosts[ short_hostname ][:aliases]           = host_template_info[:data][:aliases]
-        hosts[ short_hostname ][:extras]            = host_template_info[:data][:extras]
-    end
-
-    hosts[ short_hostname ][:mcollective][:ip]      = ip
-    hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
-    hosts[ short_hostname ][:mcollective][:collectives] = inventory[:data][:collectives]
-
-    collectives << hosts[ short_hostname ][:mcollective][:collectives]
+    mc.disconnect
 
 end
 
-mc.disconnect
+
 
 ###########################################################################
 # Fetch list of zabbix groups & Create hosts groups of discoverred
