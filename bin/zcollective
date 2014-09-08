@@ -301,16 +301,15 @@ end
 
 
 ############################################################################
-# Iterate through MCollective hosts
+# Iterate through MCollective hosts, or 
 
 if options[:host]
 
-    short_hostname = options[:host].split('.').first
-    hosts[ short_hostname ][ :mcollective ][:ip] = ''
+    hosts[ options[:host] ][ :mcollective ][:ip] = ''
     if options[:template]
-        hosts[ short_hostname][ :mcollective ][:classes] = [ options[:template] ]
+        hosts[ options[:host] ][ :mcollective ][:classes] = [ options[:template] ]
     else
-        hosts[ short_hostname ][ :mcollective ][:classes] = []
+        hosts[ options[:host] ][ :mcollective ][:classes] = []
     end
 
 else
