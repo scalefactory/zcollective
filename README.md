@@ -56,6 +56,8 @@ Usage: zcollective [options]
                                      don't have control over your DNS.
         --lockfile=f                 Use alternative lock file
         --timeout=t                  Time out after number of seconds
+        --host host                  Ignore mcollective discovery, use this host
+        --template template          Add this template (only with --host)
 ```
 
 The URL, username and password options are self-explanatory.
@@ -66,7 +68,7 @@ The URL, username and password options are self-explanatory.
 
 Passing ```--noop``` will report on the changes to be made, but not make any.
 
-
+Using ```--host``` allows you to add a host outside of the scope of mcollective, for example an Amazon RDS or Elasticache instance, to Zabbix. Passing the ```--template``` switch at the same time will add a template to that host in Zabbix.
 
 
 ## Example
@@ -106,6 +108,8 @@ I, [2012-11-21T16:49:00.184213 #10272]  INFO -- : Added missing templates to ljn
 Beware of running zcollective against puppet runs implemented using the 'puppet apply' runmode: due to a known issue/bug in puppet (http://projects.puppetlabs.com/issues/7917),
 the classes.txt file, which mcollective (and by extention zcollective) uses to classify machines, isn't written. Only use zcollective on infrastructures where you're using
 the 'puppet agent' runmode, or find another way to populate classes.txt (eg using the `--write-catalog-summary` switch in new versions of puppet) so that mcollective can correctly classify your nodes.
+
+When using ```--host```, the IP address for that host's interface in Zabbix will not be populated. This is because in many contexts for the expected use case, eg. Amazon RDS and Elasticache instances, the IP address is variable and the DNS end point name should always be used. As such, the ```--connect-by-ip``` option is not valid when using ```--host```.
 
 ## Assumptions
 
