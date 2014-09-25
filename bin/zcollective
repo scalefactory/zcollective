@@ -477,7 +477,7 @@ hosts.each do |host,data|
 
     unless options[:ignore_classes].empty?
 
-	    skip = false
+        skip = false
 
         options[:ignore_classes].each do |classname|
 
@@ -491,7 +491,7 @@ hosts.each do |host,data|
 
         end
 
-	    next if skip
+        next if skip
 
     end
 
