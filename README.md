@@ -58,7 +58,7 @@ Usage: zcollective [options]
         --timeout=t                  Time out after number of seconds
         --host host                  Ignore mcollective discovery, use this host
         --template template          Add this template (only with --host)
-        --ignore-class classname     Skip hosts containing a given puppet class
+        --ignore-classes c1,c2       Skip hosts containing given puppet classes
 ```
 
 The URL, username and password options are self-explanatory.
@@ -132,7 +132,7 @@ ZCollective has only been tested against a small number of use cases - use it at
 
 ## Changelog
 
-25/09/2014 - Support for --ignore-class added
+25/09/2014 - Support for --ignore-classes added
 
 08/09/2014 - Support for --host and --template switch for manual addition of hosts.
 
