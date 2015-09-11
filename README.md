@@ -132,7 +132,7 @@ ZCollective has only been tested against a small number of use cases - use it at
 
 ## Changelog
 
-11/09/2015 - 0.0.12 - Support changes in API from 2.2 onwards
+11/09/2015 - 0.0.13 - Support changes in API from 2.2 onwards
 
 25/09/2014 - Support for --ignore-classes added
 
