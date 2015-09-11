@@ -99,6 +99,12 @@ optparse = OptionParser.new do |opts|
         options[:template] = t
     end
 
+    options[:ignore_classes] = []
+    opts.on('-i', '--ignore-classes classname1,classname2', Array, "Skip hosts containing given puppet classes.") do |i|
+        options[:ignore_classes] = i
+    end
+
+
 end
 
 begin
@@ -464,6 +470,30 @@ end
 
 hosts.each do |host,data|
 
+
+    ########################################
+    # Skip nodes containing ignored classes
+    #
+
+    unless options[:ignore_classes].empty?
+
+        skip = false
+
+        options[:ignore_classes].each do |classname|
+
+            if data[:mcollective][:classes].include? classname
+
+                skip = true
+
+                log.info "Skipping host #{host} containing ignored class: #{classname}"
+
+            end
+
+        end
+
+        next if skip
+
+    end
 
 
     ###### Condition 1 #############################################
