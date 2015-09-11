@@ -131,6 +131,8 @@ ZCollective has only been tested against a small number of use cases - use it at
 
 ## Changelog
 
+11/09/2015 - 0.0.12 - Support changes in API from 2.2 onwards
+
 08/09/2014 - Support for --host and --template switch for manual addition of hosts.
 
 28/11/2013 - Support for --timeout and --lockfile added
