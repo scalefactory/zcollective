@@ -38,6 +38,7 @@ module ZCollective
         @auth_hash
         @options
         @log
+        @version
 
         def initialize ( options = {} )
             @options   = options
@@ -55,7 +56,18 @@ module ZCollective
 
         def authenticate ( )
 
-            response = request( 'user.authenticate',  
+            @version = request( 'apiinfo.version' )
+
+            major, minor, patch = @version.split('.')
+
+            # login method name changed after 2.0
+            if major.to_i >= 2 && minor.to_i > 0
+                login_method = 'user.login'
+            else
+                login.method = 'user.authenticate'
+            end
+
+            response = request( login_method,  
                 :user     => @options[:user], 
                 :password => @options[:password] 
             )
