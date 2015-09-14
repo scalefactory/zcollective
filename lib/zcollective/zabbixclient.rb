@@ -64,7 +64,7 @@ module ZCollective
             if major.to_i >= 2 && minor.to_i > 0
                 login_method = 'user.login'
             else
-                login.method = 'user.authenticate'
+                login_method = 'user.authenticate'
             end
 
             response = request( login_method,  
