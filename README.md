@@ -59,6 +59,7 @@ Usage: zcollective [options]
         --host host                  Ignore mcollective discovery, use this host
         --template template          Add this template (only with --host)
         --ignore-classes c1,c2       Skip hosts containing given puppet classes
+        --hostgroup-facts f1,f2      Create hostgroups and link hosts for given facts
 ```
 
 The URL, username and password options are self-explanatory.
@@ -131,6 +132,8 @@ Giving a password on the commandline isn't very secure.
 ZCollective has only been tested against a small number of use cases - use it at your own risk.
 
 ## Changelog
+
+12/04/2015 - Support for --hostgroup-facts added
 
 14/09/2015 - 0.0.14 - Fix regression for pre-2.2 support.
 

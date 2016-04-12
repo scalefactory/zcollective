@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Copyright (c) 2012, 2013, The Scale Factory Ltd.
+# Copyright (c) 2012 - 2016, The Scale Factory Ltd.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -104,6 +104,10 @@ optparse = OptionParser.new do |opts|
         options[:ignore_classes] = i
     end
 
+    options[:hostgroup_facts] = []
+    opts.on('-f', '--hostgroup-facts fact1,fact2', Array, 'Create hostgroups and link hosts for given facts.') do |f|
+        options[:hostgroup_facts] = f
+    end
 
 end
 
@@ -205,9 +209,9 @@ end
 nested_hash = lambda {|hash, key| hash[key] = Hash.new(&nested_hash)}
 hosts = Hash.new(&nested_hash)
 
-# An array of collectives to create hostgroups of:
+# Arrays of collectives and facts to create hostgroups of:
 collectives = Array.new
-
+facts = Array.new
 
 ############################################################################
 # Fetch list of zabbix groups
@@ -399,6 +403,15 @@ else
         hosts[ short_hostname ][:mcollective][:classes] = inventory[:data][:classes]
         hosts[ short_hostname ][:mcollective][:collectives] = inventory[:data][:collectives]
 
+        # Filter facts based on --hostgroup-facts argument, return a list of fact values
+        filtered_facts = inventory[:data][:facts].select{|f| options[:hostgroup_facts].include? f}.values
+
+        # Divide facts containing a comma
+        filtered_facts.map!{|v| v.to_s.split(',')}.flatten!
+
+        hosts[ short_hostname ][:mcollective][:facts] = filtered_facts
+
+        facts << filtered_facts
         collectives << hosts[ short_hostname ][:mcollective][:collectives]
 
     end
@@ -410,20 +423,22 @@ end
 
 
 ###########################################################################
-# Fetch list of zabbix groups & Create hosts groups of discoverred
-# collectives, to add hosts to later
+# Fetch list of zabbix groups & Create hosts groups of discovered
+# collectives and facts, to add hosts to later
 
+log.debug("facts: #{facts.flatten.inspect}")
+log.debug("uniq facts: #{facts.flatten.uniq.inspect}")
 log.debug("collectives: #{collectives.flatten.inspect}")
 log.debug("uniq collectives: #{collectives.flatten.uniq.inspect}")
 
-collectives_to_hostgroups = collectives.flatten.uniq
+items_to_hostgroups = collectives.flatten.uniq + facts.flatten.uniq
 
-collectives_to_hostgroups.each do | collective |
+items_to_hostgroups.each do | item |
 
     log.debug( "Fetching list of zabbix hostgroups" )
 
-    collective_hostgroup_name = "#{collective}"
-    collective_hostgroup_id   = nil
+    item_hostgroup_name = "#{item}"
+    item_hostgroup_id   = nil
 
     zabbix_client.request( 'hostgroup.get',
         'search' => '',
@@ -432,34 +447,34 @@ collectives_to_hostgroups.each do | collective |
 
         log.debug("\tName: #{hostgroup['name']} ID: #{hostgroup['groupid']}")
 
-        if hostgroup['name'] == collective_hostgroup_name
-            collective_hostgroup_id = hostgroup['groupid']
+        if hostgroup['name'] == item_hostgroup_name
+            item_hostgroup_id = hostgroup['groupid']
         end
 
     end
 
-    if collective_hostgroup_id.nil?
+    if item_hostgroup_id.nil?
 
         if options[:noop]
 
-            log.debug("No #{collective} hostgroup, but not creating as " <<
+            log.debug("No #{item} hostgroup, but not creating as " <<
                 "we're in --noop mode")
         else
 
-            log.debug("No #{collective} hostgroup: creating")
+            log.debug("No #{item} hostgroup: creating")
 
             resp = zabbix_client.request( 'hostgroup.create',
-                'name' => collective
+                'name' => item
             )
 
-            collective_hostgroup_id = resp['groupids'].first
+            item_hostgroup_id = resp['groupids'].first
 
         end
 
     end
 
-    log.info("New hostgroup: #{collective}")
-    log.info("New hostgroup's ID: #{collective_hostgroup_id}")
+    log.info("New hostgroup: #{item}")
+    log.info("New hostgroup's ID: #{item_hostgroup_id}")
 
 end
 
@@ -557,8 +572,9 @@ hosts.each do |host,data|
             host_group_hash = {}
 
             log.debug("\tName: #{hostgroup['name']} ID: #{hostgroup['groupid']}")
+            discovered_groups = data[:mcollective][:facts] + data[:mcollective][:collectives]
 
-            if data[:mcollective][:collectives].include? hostgroup['name']
+            if discovered_groups.include? hostgroup['name']
                 host_group_hash['groupid'] = hostgroup['groupid']
                 groups_by_id << host_group_hash
             end
