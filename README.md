@@ -72,6 +72,7 @@ Passing ```--noop``` will report on the changes to be made, but not make any.
 
 Using ```--host``` allows you to add a host outside of the scope of mcollective, for example an Amazon RDS or Elasticache instance, to Zabbix. Passing the ```--template``` switch at the same time will add a template to that host in Zabbix. When using the ```--host``` option, the given host will be added to the "ZCollective Discovered Hosts" hostgroup only.
 
+Passing a list of facts to ```--hostgroup-facts``` will result in ZCollective creating a Zabbix hostgroup per matching fact discovered by MCollective. It will then assign hosts to hostgroups based on the same facts. (e.g. given an example fact of osfamily=Debian and passing ```--hostgroup-facts osfamily``` to ZCollective. You will end up with a new hostgroup named Debian containing hosts with that fact)
 
 ## Example
 
