@@ -132,23 +132,6 @@ Giving a password on the commandline isn't very secure.
 
 ZCollective has only been tested against a small number of use cases - use it at your own risk.
 
-## Changelog
-
-12/04/2015 - Support for --hostgroup-facts added
-
-14/09/2015 - 0.0.14 - Fix regression for pre-2.2 support.
-
-11/09/2015 - 0.0.13 - Support changes in API from 2.2 onwards
-
-25/09/2014 - Support for --ignore-classes added
-
-08/09/2014 - Support for --host and --template switch for manual addition of hosts.
-
-28/11/2013 - Support for --timeout and --lockfile added
-
-23/08/2013 - ZCollective will now create hostgroups in zabbix based on collectives it's discovered; it will then assign hosts to these hostgroups, based on facts it's discovered via mcollective. 
-
-
 ## License
 
 ZCollective, and the ```zabbix_template``` mcollective plugin, are both BSD licensed.
