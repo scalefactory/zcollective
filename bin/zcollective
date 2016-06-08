@@ -322,6 +322,7 @@ if options[:host]
         hosts[ options[:host] ][ :mcollective ][:classes] = []
     end
     hosts [ options[:host] ][ :mcollective ][ :collectives ] = [ zcollective_hostgroup_name ]
+    hosts [ options[:host] ][ :mcollective ][ :facts ] = []
 
 else
 
