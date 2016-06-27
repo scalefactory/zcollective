@@ -1,3 +1,5 @@
+27/06/2016 - Fix for missing facts array when host option used
+
 12/04/2016 - Support for --hostgroup-facts added
 
 14/09/2015 - 0.0.14 - Fix regression for pre-2.2 support.
