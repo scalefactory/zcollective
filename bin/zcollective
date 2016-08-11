@@ -89,6 +89,12 @@ optparse = OptionParser.new do |opts|
         options[:timeout] = t.to_i
     end
 
+    # This timeout matches the default Net::HTTP.read_timeout value.
+    options[:http_timeout] = nil
+    opts.on('--http-timeout', 'Timeout Zabbix API calls after n seconds.') do |hto|
+        options[:http_timeout] = hto
+    end
+
     options[:host]
     opts.on('-h', '--host hostname', 'Skip mcollective host discovery, use the given host') do |h|
         options[:host] = h
@@ -175,10 +181,11 @@ end
 log.debug( "Connecting to Zabbix RPC service" )
 
 zabbix_client = ZCollective::ZabbixClient.new(
-    :url      => options[:zabbix_api_url],
-    :user     => options[:zabbix_user],
-    :password => options[:zabbix_pass],
-    :debug    => options[:debug]
+    :url          => options[:zabbix_api_url],
+    :user         => options[:zabbix_user],
+    :password     => options[:zabbix_pass],
+    :debug        => options[:debug],
+    :http_timeout => options[:http_timeout],
 )
 
 log.debug( "Connected and authenticated" )
