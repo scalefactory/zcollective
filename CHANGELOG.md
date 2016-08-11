@@ -1,3 +1,5 @@
+11/08/2016 - Add --http-timeout argument to increase the HTTP timeout if API calls are slow.
+
 27/06/2016 - Fix for missing facts array when host option used
 
 12/04/2016 - Support for --hostgroup-facts added
