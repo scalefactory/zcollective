@@ -98,6 +98,8 @@ module ZCollective
             uri  = URI.parse( @options[:url] )
             proxy = ENV['http_proxy'] ? URI.parse(ENV['http_proxy']) : OpenStruct.new
             http = Net::HTTP::Proxy(proxy.host, proxy.port).new( uri.host, uri.port )
+            http_timeout = @options[:http_timeout]
+            http.read_timeout = http_timeout unless http_timeout.nil?
 
             request = Net::HTTP::Post.new( uri.request_uri )
             request.add_field( 'Content-Type', 'application/json-rpc' )
