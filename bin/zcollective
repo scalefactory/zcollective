@@ -91,8 +91,8 @@ optparse = OptionParser.new do |opts|
 
     # This timeout matches the default Net::HTTP.read_timeout value.
     options[:http_timeout] = nil
-    opts.on('--http-timeout', 'Timeout Zabbix API calls after n seconds.') do |hto|
-        options[:http_timeout] = hto
+    opts.on('--http-timeout timeout', 'Timeout Zabbix API calls after n seconds.') do |hto|
+        options[:http_timeout] = hto.to_i
     end
 
     options[:host]
