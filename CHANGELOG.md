@@ -1,3 +1,5 @@
+15/08/2016 - Fix issue with --http-timeout not accepting values and ensure value is an int before use.
+
 11/08/2016 - Add --http-timeout argument to increase the HTTP timeout if API calls are slow.
 
 27/06/2016 - Fix for missing facts array when host option used
