@@ -100,6 +100,8 @@ module ZCollective
             http = Net::HTTP::Proxy(proxy.host, proxy.port).new( uri.host, uri.port )
             http_timeout = @options[:http_timeout]
             http.read_timeout = http_timeout.to_i unless http_timeout.nil?
+            http.use_ssl = true
+            http.verify_mode = OpenSSL::SSL::VERIFY_NONE
 
             request = Net::HTTP::Post.new( uri.request_uri )
             request.add_field( 'Content-Type', 'application/json-rpc' )
