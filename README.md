@@ -60,6 +60,7 @@ Usage: zcollective [options]
         --template template          Add this template (only with --host)
         --ignore-classes c1,c2       Skip hosts containing given puppet classes
         --hostgroup-facts f1,f2      Create hostgroups and link hosts for given facts
+        --insecure-https             Don't validate the SSL cert
 ```
 
 The URL, username and password options are self-explanatory.
