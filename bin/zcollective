@@ -115,9 +115,9 @@ optparse = OptionParser.new do |opts|
         options[:hostgroup_facts] = f
     end
 
-    options[:insecurehttps] = false
+    options[:insecure_https] = false
     opts.on('--insecure-https', 'Don\'t validate the SSL cert') do
-        options[:insecurehttps] = true
+        options[:insecure_https] = true
     end
 
 end
@@ -186,12 +186,12 @@ end
 log.debug( "Connecting to Zabbix RPC service" )
 
 zabbix_client = ZCollective::ZabbixClient.new(
-    :url          => options[:zabbix_api_url],
-    :user         => options[:zabbix_user],
-    :password     => options[:zabbix_pass],
-    :debug        => options[:debug],
-    :http_timeout => options[:http_timeout],
-    :insecurehttps => options[:insecurehttps],
+    :url           => options[:zabbix_api_url],
+    :user          => options[:zabbix_user],
+    :password      => options[:zabbix_pass],
+    :debug         => options[:debug],
+    :http_timeout  => options[:http_timeout],
+    :insecure_https => options[:insecure_https],
 )
 
 log.debug( "Connected and authenticated" )

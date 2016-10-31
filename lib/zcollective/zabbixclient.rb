@@ -101,7 +101,7 @@ module ZCollective
             http_timeout = @options[:http_timeout]
             http.read_timeout = http_timeout.to_i unless http_timeout.nil?
             http.use_ssl = true if uri.to_s.start_with?("https")
-            http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @options[:insecurehttps]
+            http.verify_mode = OpenSSL::SSL::VERIFY_NONE if @options[:insecure_https]
 
             request = Net::HTTP::Post.new( uri.request_uri )
             request.add_field( 'Content-Type', 'application/json-rpc' )
