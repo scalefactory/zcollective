@@ -75,6 +75,8 @@ Using ```--host``` allows you to add a host outside of the scope of mcollective,
 
 Passing a list of facts to ```--hostgroup-facts``` will result in ZCollective creating a Zabbix hostgroup per matching fact discovered by MCollective. It will then assign hosts to hostgroups based on the same facts. (e.g. given an example fact of osfamily=Debian and passing ```--hostgroup-facts osfamily``` to ZCollective. You will end up with a new hostgroup named Debian containing hosts with that fact)
 
+Using ``--insecure-https``` will pass VERIFY_NONE OpenSSL, permitting the use of insecure or self-signed certificates. _Use this at your own risk_.
+
 ## Example
 
 A run against a fresh Zabbix install on a modest infrastructure, using the default username/password:

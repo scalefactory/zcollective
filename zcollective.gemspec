@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
     s.name        = 'zcollective'
-    s.version     = '0.0.18'
+    s.version     = '0.0.19'
     s.date        = '2016-08-11'
     s.summary     = 'Zabbix/MCollective integration'
     s.description = 'ZCollective is a tool used to configure Zabbix using data discovered using MCollective.'

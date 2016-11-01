@@ -1,3 +1,5 @@
+01/11/2016 - Add support for SSL and --insecure-https
+
 15/08/2016 - Fix issue with --http-timeout not accepting values and ensure value is an int before use.
 
 11/08/2016 - Add --http-timeout argument to increase the HTTP timeout if API calls are slow.
