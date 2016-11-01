@@ -186,11 +186,11 @@ end
 log.debug( "Connecting to Zabbix RPC service" )
 
 zabbix_client = ZCollective::ZabbixClient.new(
-    :url           => options[:zabbix_api_url],
-    :user          => options[:zabbix_user],
-    :password      => options[:zabbix_pass],
-    :debug         => options[:debug],
-    :http_timeout  => options[:http_timeout],
+    :url            => options[:zabbix_api_url],
+    :user           => options[:zabbix_user],
+    :password       => options[:zabbix_pass],
+    :debug          => options[:debug],
+    :http_timeout   => options[:http_timeout],
     :insecure_https => options[:insecure_https],
 )
 
