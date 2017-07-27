@@ -120,6 +120,10 @@ optparse = OptionParser.new do |opts|
         options[:insecure_https] = true
     end
 
+    options[:auto_zabbix_inventory] = false
+    opts.on('--auto-zabbix-inventory', 'Enable Zabbix auto-inventory mode for the discovered hosts') do
+        options[:auto_zabbix_inventory] = true
+    end
 end
 
 begin
@@ -606,7 +610,7 @@ hosts.each do |host,data|
             #  we're just adding a Zabbix agent interface), and need
             #  to be in a group.
 
-            resp = zabbix_client.request( 'host.create',
+            host_create_hash = {
                 'host'       => host,
                 'interfaces' => [
                     {
@@ -618,9 +622,15 @@ hosts.each do |host,data|
                         'port'  => '10050'
                     }
                 ],
-                'groups' => groups_by_id,
+                'groups'    => groups_by_id,
                 'templates' => templates_to_add
-            )
+            }
+
+            # If we've asked or auto-zabbix-inventory mode, set that. Otherwise
+            # leave it unset
+            host_create_hash['inventory_mode'] = 1 if options[:auto_zabbix_inventory]
+
+            resp = zabbix_client.request('host.create', host_create_hash)
 
             # This call returns the created host id
 
