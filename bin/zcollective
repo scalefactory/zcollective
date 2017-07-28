@@ -627,8 +627,16 @@ hosts.each do |host,data|
             }
 
             # If we've asked or auto-zabbix-inventory mode, set that. Otherwise
-            # leave it unset
-            host_create_hash['inventory_mode'] = 1 if options[:auto_zabbix_inventory]
+            # leave it unset.
+            # We also set a note on the host saying when it was discovered.
+            # This is needed, otherwise Zabbix will ignore the request to
+            # enable the auto inventory mode.
+            if options[:auto_zabbix_inventory]
+                host_create_hash['inventory_mode'] = '1'
+                host_create_hash['inventory'] = {
+                    'notes' => "Discovered by ZCollective at #{Time.now}",
+                }
+            end
 
             resp = zabbix_client.request('host.create', host_create_hash)
 
