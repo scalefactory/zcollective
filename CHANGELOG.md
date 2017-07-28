@@ -1,3 +1,5 @@
+27/07/2017 - Add Zabbix Automatic Host Inventory support (`--auto-zabbix-inventory`)
+
 01/11/2016 - Add support for SSL and --insecure-https
 
 15/08/2016 - Fix issue with --http-timeout not accepting values and ensure value is an int before use.
