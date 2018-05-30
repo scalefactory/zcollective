@@ -1,3 +1,5 @@
+30/05/2018 - Update Gem dependencies to assure netaddr API v1
+
 27/07/2017 - Add Zabbix Automatic Host Inventory support (`--auto-zabbix-inventory`)
 
 01/11/2016 - Add support for SSL and --insecure-https
