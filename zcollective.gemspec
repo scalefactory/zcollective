@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
         'lib/zcollective/zabbixclient.rb',
         'bin/zcollective'
     ]
-    s.add_runtime_dependency 'netaddr', '>= 1.5.0'
+    s.add_runtime_dependency 'netaddr', '~> 1.5'
     s.executables << 'zcollective'
     s.homepage    = 'http://github.com/scalefactory/zcollective'
     s.require_path = 'lib'
